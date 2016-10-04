@@ -11,14 +11,16 @@ Y = 1
 width, height = None, None
 rectangles = []
 
+field = None
 
 tk = Tk()
-
 
 
 with open("lab3.txt") as f:
     width, height = f.readline().split("x")
     width, height = int(width), int(height)
+
+    field = [[False for _ in range(width)] for _ in range(height)]
 
     rectangles.append([1, 1, width, height])
     for line in f.readlines():
@@ -32,23 +34,25 @@ for rectangle in rectangles:
     canvas.create_rectangle(*rectangle)
 
 
-# def fill(x, y, color="gray", type="full"):
-#     # print(x, y)
-#
-#     # if x in [0, width + 1, height + 1] or y in [0, height + 1, width + 1]:
-#     #     print(x, y, " in [0, {}, {}]".format(width, height))
-#     #     return
-#
-#     if is_black_point(x, y):
-#         return
-#
-#     # canvas.
-#     canvas.create_line(x, y, x, y, fill="black")
-#
-#     fill(x + 1, y, color=color, type="full")
-#     # fill(x - 1, y, color=color, type="full")
-#     # fill(x, y + 1, color=color, type="full")
-#     # fill(x, y - 1, color=color, type="full")
+def fill(x, y, color="gray", type="full"):
+    # print(x, y)
+
+    # if x in [0, width + 1, height + 1] or y in [0, height + 1, width + 1]:
+    #     print(x, y, " in [0, {}, {}]".format(width, height))
+    #     return
+
+    if is_black_point(x, y) or field[y][x]:
+        return
+
+    field[y][x] = True
+
+    # canvas.
+    canvas.create_line(x, y, x, y, fill="gray")
+
+    fill(x + 1, y, color=color, type="full")
+    fill(x - 1, y, color=color, type="full")
+    fill(x, y + 1, color=color, type="full")
+    fill(x, y - 1, color=color, type="full")
 
 
 def is_black_point(x, y):
@@ -182,11 +186,11 @@ def fill2(_x, _y, color="gray"):
 
 # canvas.create_line(24, 55, 24, 55)
 
-fill2(24, 61)
+# fill2(24, 61)
 
-# fill(11, 22)
+fill(11, 22)
 # fill(11, 31)
-# fill(490, 250)
+fill(71, 71)
 
 
 canvas.pack()
