@@ -34,7 +34,7 @@ for rectangle in rectangles:
     canvas.create_rectangle(*rectangle)
 
 
-def fill(x, y, color="gray", type="full"):
+def fill(x, y, color="red", type="full"):
     # print(x, y)
 
     # if x in [0, width + 1, height + 1] or y in [0, height + 1, width + 1]:
@@ -47,7 +47,8 @@ def fill(x, y, color="gray", type="full"):
     field[y][x] = True
 
     # canvas.
-    canvas.create_line(x, y, x, y, fill="gray")
+    if x % 5 == 0:# or y % 5 == 0:
+        canvas.create_line(x, y, x, y, fill=color)
 
     fill(x + 1, y, color=color, type="full")
     fill(x - 1, y, color=color, type="full")
@@ -188,7 +189,7 @@ def fill2(_x, _y, color="gray"):
 
 # fill2(24, 61)
 
-fill(11, 22)
+fill(11, 22, "red")
 # fill(11, 31)
 fill(71, 71)
 
