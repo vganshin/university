@@ -4,6 +4,7 @@
 #include <string>
 #include <stdio.h>
 #include <unistd.h> 
+#include <ctime>
 
 using namespace std;
 
@@ -54,17 +55,6 @@ int_matrix read_matrix(string filename) {
     return matrix;    
 }
 
-void print_matrix(int_matrix matrix) {
-    cout << matrix.row_count << " " << matrix.column_count << endl;
-
-    for (int row = 0; row < matrix.row_count; row++) {
-        for (int column = 0; column < matrix.column_count; column++) {
-            cout << matrix.data[row][column] << "\t";
-        }
-        cout << endl;
-    }
-}
-
 int main() {
     int_matrix a_matrix = read_matrix("a.txt");
     int_matrix b_matrix = read_matrix("b.txt");
@@ -79,8 +69,9 @@ int main() {
 
     int_matrix c_matrix = init_matrix(a_matrix.row_count, b_matrix.column_count);
 
-    #pragma omp parallel
-    #pragma omp for
+    double start_time = omp_get_wtime();
+
+    #pragma omp parallel for
     for (int row_column = 0; row_column < c_matrix.row_count * c_matrix.column_count; row_column++) {
         int row = row_column / c_matrix.column_count;
         int column = row_column % c_matrix.column_count;
@@ -89,6 +80,8 @@ int main() {
             c_matrix.data[row][column] += a_matrix.data[row][mult_iter] * b_matrix.data[mult_iter][column];
         }
     }
+
+    cout << "time = " << omp_get_wtime() - start_time << endl;
 
     return 0;
 }
