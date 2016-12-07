@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     dron.show_bills()
 
-    dron.transfer("1002", "1000", 840)
+    dron.transfer("1002", "1000", 1000)
 
     # AdminPanel.accept_transaction("100002")
 
@@ -50,4 +50,10 @@ if __name__ == '__main__':
     AdminPanel.show_unaccepted_transactions()
 
     pasha.show_bill("1000")
+
+    # ====
+
+    # dron.show_bills()
+    #
+    # dron.transfer("1002", "1000", 1000)
 

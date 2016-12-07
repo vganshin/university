@@ -23,11 +23,13 @@ class Transaction:
     def accept(self):
         amount = self.calculate_exchange()
         self.receiver_bill.recharge(amount)
+        self.sender_bill.unblock_money_by_transaction_id(self.id)
         self.state = "accepted"
         self.last_modified = datetime.now()
 
     def reject(self):
         self.sender_bill.recharge(self.amount)
+        self.sender_bill.unblock_money_by_transaction_id(self.id)
         self.state = "rejected"
         self.last_modified = datetime.now()
 

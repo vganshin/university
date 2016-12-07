@@ -25,6 +25,9 @@ class Bill:
         self.blocks[transaction_id] = amount
         self.withdraw(amount)
 
+    def unblock_money_by_transaction_id(self, transaction_id):
+        self.blocks.pop(transaction_id)
+
     @property
     def amount_with_blocks(self):
         return self.amount + sum(self.blocks.values())

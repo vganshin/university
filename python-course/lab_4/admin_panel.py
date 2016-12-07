@@ -73,7 +73,9 @@ class AdminPanel:
 
     @classmethod
     def reject_transaction(cls, transaction_id):
-        pass
+        transaction = TransactionService.get_transaction_by_transaction_id(transaction_id)
+
+        transaction.reject()
 
     @classmethod
     def print(cls, *text):
