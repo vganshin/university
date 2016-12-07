@@ -12,6 +12,7 @@ class XmlDescriptor:
         self.fields = args
 
     def __get__(self, instance, owner):
+        self.tag_name = instance.__class__.__name__
         return '<{} {}/>'.format(
             self.tag_name,
             ' '.join(['{}="{}"'.format(field, getattr(instance, field)) for field in self.fields])
@@ -60,4 +61,4 @@ Person, export_persons = create_class('Person', 'name', 'birthday')
 
 p = Person("Vlad", "26.09.1994")
 
-print(export_persons('csv', p))
+print(export_persons('xml', p))
