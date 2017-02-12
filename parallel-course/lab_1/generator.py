@@ -17,7 +17,8 @@ def gen_matrix(row, column):
     for i in range(row):
         matrix.append([])
         for j in range(column):
-            matrix[i].append(str(int(math.floor(random()*10))))
+            # matrix[i].append(str(int(math.floor(random()*10))))
+            matrix[i].append("1")
 
     return matrix
 

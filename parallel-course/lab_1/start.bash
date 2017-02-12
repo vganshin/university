@@ -1,7 +1,7 @@
 #!/bin/bash
 
 for SCHEDULER in "static" "dynamic"; do
-	for SIZE in 500 1000; do
+	for SIZE in 2; do
 		
 	python generator.py $SIZE $1 $SIZE
 
