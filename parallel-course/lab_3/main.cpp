@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     init();
 
     double start_time;
-    
+
     if (proc_rank == ROOT) {
         start_time = MPI_Wtime();
     }
@@ -52,7 +52,9 @@ int main(int argc, char *argv[]) {
 void init() {
     if (proc_rank == ROOT) {
         dim = get_dimention();
-        
+
+        cout << "start." << endl;
+
         ifstream in("in.txt");
 
         in >> source_len;
@@ -67,6 +69,8 @@ void init() {
                 source_arr[i] = INT_MAX;
             }
         }
+
+        cout << "end." << endl;
 
         in.close();
 
@@ -88,11 +92,10 @@ void sort() {
     int group, pivot;
 
     for (int i = dim; i > 0; i--) {
-
         group = proc_rank & (-1 << i);
 
         MPI_Comm_split(MPI_COMM_WORLD, group, proc_rank, &comm);
-        
+
         int group_rank;
 
         MPI_Comm_rank(comm, &group_rank);
@@ -126,19 +129,25 @@ void sort() {
             rest_arr = arr;
         }
 
-
         MPI_Send(&send_len, 1, MPI_INT, collegue, ROOT, comm);
         MPI_Recv(&recv_len, 1, MPI_INT, collegue, ROOT, comm, &status);
 
-        if (send_len != 0) {
+        recv_arr = new int[recv_len + rest_len];
+
+        if (proc_rank > collegue) {
             MPI_Send(send_arr, send_len, MPI_INT, collegue, ROOT, comm);
         }
-
-        recv_arr = new int[recv_len + rest_len];
-        if (recv_len != 0) {
-
+        else {
             MPI_Recv(recv_arr, recv_len, MPI_INT, collegue, ROOT, comm, &status);
         }
+
+        if (proc_rank < collegue) {
+            MPI_Send(send_arr, send_len, MPI_INT, collegue, ROOT, comm);
+        }
+        else {
+            MPI_Recv(recv_arr, recv_len, MPI_INT, collegue, ROOT, comm, &status);
+        }
+
         memcpy(recv_arr + recv_len, rest_arr, rest_len * sizeof(int));
 
         qsort(recv_arr, recv_len + rest_len, sizeof(int), compare);
