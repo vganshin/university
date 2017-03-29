@@ -6,13 +6,13 @@
 using namespace std;
 
 #define ROOT 0
-#define EPS 0.001
 
 int proc_rank;
 int proc_num;
 
 int n;
 int real_n;
+double eps;
 double** a;
 double* b;
 double* x_prev;
@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
     if (proc_rank == ROOT) {
         ifstream in("in.txt");
 
-        in >> real_n;
+        in >> real_n >> eps;
 
         n = real_n % proc_num == 0 ? real_n : (real_n / proc_num + 1) * proc_num;
 
@@ -102,47 +102,41 @@ int main(int argc, char* argv[]) {
     double tmp;
     x = new double[k];
 
-    int wow = 0;
     do {
-        for (int i = 0; i < k; i++) {
-            if (k * proc_rank + i >= real_n) {
+        for (int _i = 0; _i < k; _i++) {
+            int i = proc_rank * k + _i;
+
+            if (i >= real_n) {
                 break;
             }
 
-            x[i] = b[proc_rank * k + i];
+            x[_i] = b[i];
             for (int j = 0; j < real_n; j++) {
-                if ((k * proc_rank + i) != j) {
-                    x[i] -= a[(proc_rank * k + i)][j] * x_prev[(proc_rank * k + i)];
+                if (i != j) {
+                    x[_i] -= a[i][j] * x_prev[j];
                 }
             }
-            x[i] /= a[(proc_rank * k + i)][(proc_rank * k + i)];
+            x[_i] /= a[i][i];
         }
 
         norm = 0;
-        for (int i = 0; i < k; i++) {
-            tmp = fabs(x_prev[k * proc_rank + i] - x[i]);
-            if (tmp > norm) {
-                norm = tmp;
-            }
+        for (int _i = 0; _i < k; _i++) {
+            int i = proc_rank * k + _i;
+            tmp = fabs(x_prev[i] - x[_i]);
         }
 
         MPI_Reduce(&norm, &max_norm, 1, MPI_DOUBLE, MPI_MAX, ROOT, MPI_COMM_WORLD);
         MPI_Bcast(&max_norm, 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
         MPI_Allgather(x, k, MPI_DOUBLE, x_prev, k, MPI_DOUBLE, MPI_COMM_WORLD);
-        wow++;
-    } while (wow < 100000);
-    // } while (max_norm > EPS);
-
+    } while (max_norm > eps);
 
     if (proc_rank == ROOT) {
+        ofstream out("out.txt");
 
-        cout << "max_norm = " << max_norm << endl;
-        for (int i = 0; i < n; i++) {
-            cout << x_prev[i] << endl;
+        for (int i = 0; i < real_n; i++) {
+            out << x_prev[i] << " ";
         }
-        // for (int i = 0; i < k; i++) {
-        //     cout << x[i] << endl;
-        // }
+        out << endl;
     }
 
     MPI_Finalize();
