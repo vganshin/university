@@ -13,7 +13,7 @@ int proc_num;
 
 int n;
 int real_n;
-double* a;
+double** a;
 double* b;
 double* x_prev;
 double* x;
@@ -23,11 +23,11 @@ bool can_use_jakobi() {
         double tmp = 0;
         for (int j = 0; j < n; j++) {
             if (i != j) {
-                tmp += a[i * n + j];
+                tmp += a[i][j];
             }
         }
 
-        if (a[i * n + i] < tmp) {
+        if (a[i][i] < tmp) {
             return false;
         }
     }
@@ -47,20 +47,23 @@ int main(int argc, char* argv[]) {
 
         n = real_n % proc_num == 0 ? real_n : (real_n / proc_num + 1) * proc_num;
 
-        a = new double[n * n];
+        a = new double*[n];
+        for (int i = 0; i < n; i++) {
+            a[i] = new double[n];
+        }
         b = new double[n];
         x_prev = new double[n];
 
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                a[i * n + j] = 0;
+                a[i][j] = 0;
             }
             b[i] = 0;
         }
 
         for (int i = 0; i < real_n; i++) {
             for (int j = 0; j < real_n; j++) {
-                in >> a[i * n + j];
+                in >> a[i][j];
             }
             in >> b[i];
         }
@@ -71,7 +74,7 @@ int main(int argc, char* argv[]) {
         }
 
         for (int i = 0; i < n; i++) {
-            x_prev[i] = b[i] / a[i * n + i];
+            x_prev[i] = b[i] / a[i][i];
         }
     }
 
@@ -79,12 +82,17 @@ int main(int argc, char* argv[]) {
     MPI_Bcast(&n, 1, MPI_INT, ROOT, MPI_COMM_WORLD);
 
     if (proc_rank != ROOT) {
-        a = new double[n * n];
+        a = new double*[n];
+        for (int i = 0; i < n; i++) {
+            a[i] = new double[n];
+        }
         b = new double[n];
         x_prev = new double[n];
     }
 
-    MPI_Bcast(a, n * n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+    for (int i = 0; i < n; i++) {
+        MPI_Bcast(a[i], n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
+    }
     MPI_Bcast(b, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
     MPI_Bcast(x_prev, n, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
 
@@ -104,10 +112,10 @@ int main(int argc, char* argv[]) {
             x[i] = b[proc_rank * k + i];
             for (int j = 0; j < real_n; j++) {
                 if ((k * proc_rank + i) != j) {
-                    x[i] -= a[(proc_rank * k + i) * n + j] * x_prev[(proc_rank * k + i)];
+                    x[i] -= a[(proc_rank * k + i)][j] * x_prev[(proc_rank * k + i)];
                 }
             }
-            x[i] /= a[(proc_rank * k + i) * n + (proc_rank * k + i)];
+            x[i] /= a[(proc_rank * k + i)][(proc_rank * k + i)];
         }
 
         norm = 0;
