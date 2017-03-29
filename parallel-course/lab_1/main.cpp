@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string>
 #include <stdio.h>
-#include <unistd.h> 
+#include <unistd.h>
 #include <ctime>
 
 using namespace std;
@@ -52,7 +52,7 @@ int_matrix read_matrix(string filename) {
         }
     }
 
-    return matrix;    
+    return matrix;
 }
 
 void print_matrix(int_matrix matrix) {
@@ -89,15 +89,9 @@ int main() {
         int row = row_column / c_matrix.column_count;
         int column = row_column % c_matrix.column_count;
 
-        int temp = 0;
-
-        #pragma omp parallel for reduction(+:temp)
         for (int mult_iter = 0; mult_iter < mult_count; mult_iter++) {
-            temp += a_matrix.data[row][mult_iter] * b_matrix.data[mult_iter][column];
-            // c_matrix.data[row][column] += a_matrix.data[row][mult_iter] * b_matrix.data[mult_iter][column];
+            c_matrix.data[row][column] += a_matrix.data[row][mult_iter] * b_matrix.data[mult_iter][column];
         }
-
-        c_matrix.data[row][column] = temp;
     }
 
     cout << "time = " << omp_get_wtime() - start_time << endl;
