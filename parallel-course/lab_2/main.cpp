@@ -9,6 +9,7 @@ using namespace std;
 
 int proc_rank;
 int proc_num;
+double start_time;
 
 int n;
 int real_n;
@@ -78,8 +79,13 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    if (proc_rank == ROOT) {
+        start_time = MPI_Wtime();
+    }
+
     MPI_Bcast(&real_n, 1, MPI_INT, ROOT, MPI_COMM_WORLD);
     MPI_Bcast(&n, 1, MPI_INT, ROOT, MPI_COMM_WORLD);
+    MPI_Bcast(&eps, 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
 
     if (proc_rank != ROOT) {
         a = new double*[n];
@@ -123,12 +129,19 @@ int main(int argc, char* argv[]) {
         for (int _i = 0; _i < k; _i++) {
             int i = proc_rank * k + _i;
             tmp = fabs(x_prev[i] - x[_i]);
+            if (tmp > norm) {
+                norm = tmp;
+            }
         }
 
         MPI_Reduce(&norm, &max_norm, 1, MPI_DOUBLE, MPI_MAX, ROOT, MPI_COMM_WORLD);
         MPI_Bcast(&max_norm, 1, MPI_DOUBLE, ROOT, MPI_COMM_WORLD);
         MPI_Allgather(x, k, MPI_DOUBLE, x_prev, k, MPI_DOUBLE, MPI_COMM_WORLD);
     } while (max_norm > eps);
+
+    if (proc_rank == ROOT) {
+        cout << "time: " << MPI_Wtime() - start_time << " s." << endl;
+    }
 
     if (proc_rank == ROOT) {
         ofstream out("out.txt");

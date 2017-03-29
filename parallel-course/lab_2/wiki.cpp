@@ -1,8 +1,8 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
-const double eps = 0.001; ///< желаемая точность
 
+double eps; ///< желаемая точность
 double** a;
 double* b;
 double* x;
@@ -32,6 +32,14 @@ void jacobi (int N, double** A, double* F, double* X)
 				norm = fabs(X[h] - TempX[h]);
 			X[h] = TempX[h];
 		}
+
+		// for (int i = 0; i < N; i++) {
+		// 	cout << X[i] << " ";
+		// }
+		// cout << endl;
+
+		// char stop;
+		// cin >> stop;
 	} while (norm > eps);
 	delete[] TempX;
 }
@@ -39,7 +47,7 @@ void jacobi (int N, double** A, double* F, double* X)
 int main(int argc, char* argv[]) {
 	ifstream in("in.txt");
 
-    in >> n;
+    in >> n >> eps;
 
     a = new double*[n];
     for (int i = 0; i < n; i++) {
@@ -56,15 +64,36 @@ int main(int argc, char* argv[]) {
     }
 
     for (int i = 0; i < n; i++) {
-        x[i] = -1000.; //b[i] / a[i][i];
+        x[i] = b[i] / a[i][i];
     }
+
+    // cout << "a: " << endl;
+    // for (int i = 0; i < n; i++) {
+    // 	for (int j = 0; j < n; j++) {
+    // 		cout << a[i][j] << " ";
+    // 	}
+    // 	cout << endl;
+    // }
+    // cout << "b: " << endl;
+    // for (int i = 0; i < n; i++) {
+    // 	cout << b[i] << " ";
+    // }
+    // cout << endl;
+    // cout << "x: " << endl;
+    // for (int i = 0; i < n; i++) {
+    // 	cout << x[i] << " ";
+    // }
+    // cout << endl;
 
     jacobi(n, a, b, x);
 
 
+    ofstream out("out.txt");
+
     for (int i = 0; i < n; i++) {
-    	cout << x[i] << endl;
+    	out << x[i] << " ";
     }
+    out << endl;
 
 	return 0;
 }
