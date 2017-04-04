@@ -26,9 +26,7 @@ int* destinations;
 bool* visited;
 node** edges;
 
-int get_weight(int from, int to) {
-    node* current = edges[from];
-
+int get_weight(node* current, int to) {
     while (current != NULL) {
         if (current->to == to) {
             return current->weight;
@@ -72,39 +70,67 @@ int main() {
 
     node* current;
 
+    int num_of_threads = omp_get_max_threads();
+
+    int* min_d_arr = new int[num_of_threads];
+    int* min_i_arr = new int[num_of_threads];
+
     int min_d;
     int min_i;
 
+    int tmp;
     double start_time, parallel_time, seq_time;
 
     double common_start_time = omp_get_wtime();
 
     int visited_count = 0;
-
     while (visited_count < vertext_num) {
         start_time = omp_get_wtime();
-        min_d = INT_MAX;
+
+        for (int i = 0; i < num_of_threads; i++) {
+            min_d_arr[i] = INT_MAX;
+        }
+
+        #pragma omp parallel for
         for (int i = 0; i < vertext_num; i++) {
-            if (!visited[i] && destinations[i] < min_d) {
-                min_d = destinations[i];
-                min_i = i;
+            if (!visited[i] && destinations[i] < min_d_arr[omp_get_thread_num()]) {
+                min_d_arr[omp_get_thread_num()] = destinations[i];
+                min_i_arr[omp_get_thread_num()] = i;
+            }
+        }
+
+        min_d = INT_MAX;
+
+        for (int i = 0; i < num_of_threads; i++) {
+            if (min_d_arr[i] < min_d) {
+                min_d = min_d_arr[i];
+                min_i = min_i_arr[i];
             }
         }
 
         if (min_d == INT_MAX) {
             break;
         }
-
         visited[min_i] = true;
         visited_count++;
         seq_time += omp_get_wtime() - start_time;
 
 
         start_time = omp_get_wtime();
-        #pragma omp parallel for
+        #pragma omp parallel for private(weight, tmp)
         for (int i = 0; i < vertext_num; i++) {
-            if (!visited[i] && destinations[min_i] + get_weight(min_i, i) > destinations[min_i] && destinations[min_i] + get_weight(min_i, i) < destinations[i]) {
-                destinations[i] = destinations[min_i] + get_weight(min_i, i);
+            if (visited[i]) {
+                continue;
+            }
+
+            weight = get_weight(edges[min_i], i);
+            if (weight == INT_MAX) {
+                continue;
+            }
+
+            tmp = destinations[min_i] + weight;
+            if (tmp < destinations[i]) {
+                destinations[i] = tmp;
             }
         }
         parallel_time += omp_get_wtime() - start_time;
