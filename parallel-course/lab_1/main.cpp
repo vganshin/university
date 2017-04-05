@@ -82,15 +82,25 @@ int main() {
 
     int_matrix c_matrix = init_matrix(a_matrix.row_count, b_matrix.column_count);
 
+    int row, column;
+
+    int_matrix bt = init_matrix(b_matrix.column_count, b_matrix.row_count);
+
+    for(int i = 0; i < bt.row_count; ++i) {
+        for(int j = 0; j < bt.column_count; ++j) {
+            bt.data[i][j] = b_matrix.data[j][i];
+        }
+    }
+
     double start_time = omp_get_wtime();
 
-    #pragma omp parallel for
+    #pragma omp parallel for shared(a_matrix, bt, c_matrix) private(row, column)
     for (int row_column = 0; row_column < c_matrix.row_count * c_matrix.column_count; row_column++) {
-        int row = row_column / c_matrix.column_count;
-        int column = row_column % c_matrix.column_count;
+        row = row_column / c_matrix.column_count;
+        column = row_column % c_matrix.column_count;
 
         for (int mult_iter = 0; mult_iter < mult_count; mult_iter++) {
-            c_matrix.data[row][column] += a_matrix.data[row][mult_iter] * b_matrix.data[mult_iter][column];
+            c_matrix.data[row][column] += a_matrix.data[row][mult_iter] * bt.data[column][mult_iter];
         }
     }
 
