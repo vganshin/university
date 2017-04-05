@@ -5,130 +5,102 @@
 
 using namespace std;
 
-struct node {
-    int to;
-    unsigned int weight;
-    struct node* next;
-};
-
-node* create_node(int to, int weight, node* next) {
-    node* n = (node*) malloc(sizeof(node));
-
-    n->to = to;
-    n->weight = weight;
-    n->next = next;
-
-    return n;
-}
-
-int vertext_num, edge_num;
-int* destinations;
-bool* visited;
-node** edges;
-
-int get_weight(node* current, int to) {
-    while (current != NULL) {
-        if (current->to == to) {
-            return current->weight;
-        }
-        current = current->next;
-    }
-
-    return INT_MAX;
-}
-
 int main() {
+    int vertex_num, edge_num;
+
     ifstream in("in.txt");
 
-    in >> vertext_num >> edge_num;
+    in >> vertex_num >> edge_num;
 
-    visited = new bool[vertext_num];
-    for (int i = 0; i < vertext_num; i++) {
-        visited[i] = false;
+    int** edges = new int*[vertex_num];
+
+    for (int i = 0; i < vertex_num; i++) {
+        edges[i] = new int[vertex_num];
     }
 
-    destinations = new int[vertext_num];
-    for (int i = 0; i < vertext_num; i++) {
-        destinations[i] = INT_MAX;
-    }
-    destinations[0] = 0;
-
-    edges = (node**) malloc(vertext_num * sizeof(node));
-
-    for (int i = 0; i < vertext_num; i++) {
-        edges[i] = NULL;
+    for (int i = 0; i < vertex_num; i++) {
+        for (int j = 0; j < vertex_num; j++) {
+            edges[i][j] = INT_MAX;
+        }
     }
 
     int from, to, weight;
     for (int i = 0; i < edge_num; i++) {
-
         in >> from >> to >> weight;
 
-        edges[from] = create_node(to, weight, edges[from]);
-        edges[to] = create_node(from, weight, edges[to]);
+        edges[from][to] = weight;
+        edges[to][from] = weight;
     }
 
-    node* current;
-
-    int num_of_threads = omp_get_max_threads();
-
-    int* min_d_arr = new int[num_of_threads];
-    int* min_i_arr = new int[num_of_threads];
-
-    int min_d;
-    int min_i;
-
-    int tmp;
     double start_time, parallel_time, seq_time;
+    int num_of_threads = omp_get_max_threads();
+    int* min_destinations = new int[num_of_threads];
+    int* min_indexes = new int[num_of_threads];
+    int min_destination;
+    int min_index;
 
-    double common_start_time = omp_get_wtime();
 
     int visited_count = 0;
-    while (visited_count < vertext_num) {
-        start_time = omp_get_wtime();
+    bool* visited = new bool[vertex_num];
+    for (int i = 0; i < vertex_num; i++) {
+        visited[i] = false;
+    }
 
+
+    int* destinations = new int[vertex_num];
+    for (int i = 0; i < vertex_num; i++) {
+        destinations[i] = INT_MAX;
+    }
+    destinations[0] = 0;
+
+
+    double common_start_time = omp_get_wtime();
+    while (visited_count < vertex_num) {
+        start_time = omp_get_wtime();
         for (int i = 0; i < num_of_threads; i++) {
-            min_d_arr[i] = INT_MAX;
+            min_destinations[i] = INT_MAX;
         }
 
         #pragma omp parallel for
-        for (int i = 0; i < vertext_num; i++) {
-            if (!visited[i] && destinations[i] < min_d_arr[omp_get_thread_num()]) {
-                min_d_arr[omp_get_thread_num()] = destinations[i];
-                min_i_arr[omp_get_thread_num()] = i;
+        for (int i = 0; i < vertex_num; i++) {
+            int thread_num = omp_get_thread_num();
+            if (!visited[i] && destinations[i] < min_destinations[thread_num]) {
+                min_destinations[thread_num] = destinations[i];
+                min_indexes[thread_num] = i;
             }
         }
 
-        min_d = INT_MAX;
+        min_destination = INT_MAX;
 
         for (int i = 0; i < num_of_threads; i++) {
-            if (min_d_arr[i] < min_d) {
-                min_d = min_d_arr[i];
-                min_i = min_i_arr[i];
+            if (min_destinations[i] < min_destination) {
+                min_destination = min_destinations[i];
+                min_index = min_indexes[i];
             }
         }
 
-        if (min_d == INT_MAX) {
+        if (min_destination == INT_MAX) {
             break;
         }
-        visited[min_i] = true;
+
+        visited[min_index] = true;
         visited_count++;
         seq_time += omp_get_wtime() - start_time;
 
 
         start_time = omp_get_wtime();
-        #pragma omp parallel for private(weight, tmp)
-        for (int i = 0; i < vertext_num; i++) {
+        #pragma omp parallel for private(weight)
+        for (int i = 0; i < vertex_num; i++) {
             if (visited[i]) {
                 continue;
             }
 
-            weight = get_weight(edges[min_i], i);
+            weight = edges[min_index][i];
             if (weight == INT_MAX) {
                 continue;
             }
 
-            tmp = destinations[min_i] + weight;
+            int tmp = destinations[min_index] + weight;
             if (tmp < destinations[i]) {
                 destinations[i] = tmp;
             }
@@ -140,6 +112,25 @@ int main() {
     cout << "  sum: " << seq_time + parallel_time << " s.";
     cout << " (" << seq_time << " + " << parallel_time << ")" << endl;
 
+    for (int i = 0; i < vertex_num; i++) {
+        if (destinations[i] == INT_MAX) {
+            cout << "INF";
+        }
+        else {
+            cout << destinations[i];
+        }
+        cout << " ";
+    }
+    cout << endl;
+
+    for (int i = 0; i < vertex_num; i++) {
+        delete[] edges[i];
+    }
+    delete[] edges;
+    delete[] min_destinations;
+    delete[] min_indexes;
+    delete[] visited;
+    delete[] destinations;
 
     return 0;
 }
